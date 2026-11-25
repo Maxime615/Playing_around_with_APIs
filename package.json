@@ -1,0 +1,9 @@
+{
+    "name": "car-rental",
+    "type": "module",
+    "main" : "index.js",
+    "scripts": {
+        "start": "node --env-file=.env index.js",
+        "serve": "node --env-file=.env server.js"
+    }
+}
