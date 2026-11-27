@@ -1,5 +1,5 @@
 const FLEET = [
-    { id: "1", model: "Hyundai Santa fe", make: "hyundai", apiModel: "santa fe", year: 2022, supplier: "Avis", pickup: "KGL", category: "suv",
+    { id: "1", model: "Hyundai Santa Fe", make: "hyundai", apiModel: "santa fe", year: 2022, supplier: "Avis", pickup: "KGL", category: "suv",
         transmission: "automatic", seats: 5, dailyRate: 70, currency: "USD" },
     { id: "2", model: "Toyota Land Cruiser", make: "toyota", apiModel: "land cruiser", year: 2022, supplier: "Entreprise", pickup: "KGL", category: "suv", transmission: "manual", seats: 7, dailyRate: 34, currency: "USD"},
     { id: "3", model: "Hyundai Avante", make: "hyundai", apiModel: "elantra", year: 2022, supplier: "Sixt", pickup: "LHR", category: "sedan", transmission: "automatic", seats: 5, dailyRate: 52, currency: "USD" }    
@@ -68,5 +68,5 @@ export async function fetchRentalCars() {
 
     if (failed === 0) return {source: "api", cars};
     if (failed === cars.length) return { source: `fallback (${firstError})`, cars };
-    return { sourcce: `api (${cars.length - failed}/${cars.length} specs, ${firstError})`, cars };
+    return { source: `api (${cars.length - failed}/${cars.length} specs, ${firstError})`, cars };
 }

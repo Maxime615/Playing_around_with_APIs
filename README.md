@@ -1,8 +1,8 @@
 # Car Rental Finder
 
-A Node.js command-line application that searches rental cars by pickup location, dates, category, transmission and price. The same code also runs as a small HTTP service (`server.js`) so it can be deployed on two web servers and balanced by an Nginx load balancer.
+A Node.js command-line application that searches rental cars by pickup location, category, transmission and price. The same code also runs as a small HTTP service (`server.js`) so it can be deployed on two web servers and balanced by an Nginx load balancer.
 
-If no API credentials are configured (or the API call fails), the app falls back to a built-in sample dataset, so it always returns results.
+The rental fleet (supplier, pickup, daily rate) is built into the app. For each car, the app asks the [API Ninjas Cars API](https://api-ninjas.com/api/cars) for its real specifications (drive type, fuel type, engine) and shows them in the results table. If the API key is missing or a lookup fails, the app does not crash: the car is still listed, the spec columns show `-`, and the `Source` line says what happened.
 
 ## Project structure
 
@@ -19,7 +19,7 @@ If no API credentials are configured (or the API call fails), the app falls back
 ## Requirements
 
 - Node.js 20.6 or newer (needed for `--env-file`). The servers run Ubuntu 20.04, whose default Node is v10, so Node 20 is installed from NodeSource.
-- (Optional) Rental API credentials
+- (Optional) A free API Ninjas key from https://api-ninjas.com
 
 ## Configuration
 
@@ -30,13 +30,11 @@ cp .env.example .env
 ```
 
 ```
-API_BASE_URL=<api base url>   # see .env.example
-API_KEY=<your key>
-API_SECRET=<your secret>
-DRIVER_AGE=32
-REQUEST_TIMEOUT_MS=8000
 PORT=3000
 SERVER_ID=web-01
+API_BASE_URL=https://api.api-ninjas.com
+API_KEY=<your API Ninjas key>
+REQUEST_TIMEOUT_MS=8000
 ```
 
 `SERVER_ID` identifies which server answered a request. Set it to `web-01` on Web01 and `web-02` on Web02.
@@ -46,10 +44,10 @@ SERVER_ID=web-01
 CLI:
 
 ```bash
-npm start -- --pickup KGL --from 2026-12-20 --to 2026-12-27 --category suv --max-price 80 --sort price
+npm start -- --pickup KGL --category suv --max-price 80 --sort price
 ```
 
-Options: `--pickup`, `--from`, `--to`, `--driver-age`, `--query`, `--category`, `--transmission`, `--max-price`, `--sort` (`price` or `price-desc`).
+Options: `--pickup`, `--query`, `--category`, `--transmission`, `--max-price`, `--sort` (`price` or `price-desc`).
 
 HTTP service:
 
@@ -210,17 +208,16 @@ sudo systemctl enable --now nginx
 
 - `nginx -t` fails: check for typos in the directive and variable names (`X-Forwarded-For`, `$proxy_add_x_forwarded_for`).
 - 502 Bad Gateway: the app is not running on one of the web servers, or port 3000 is blocked. Check `systemctl status car-rental` and the firewall.
-- Results say `Source: sample`: API credentials are missing in `.env`, so the fallback data is being used.
-- `source` shows `fallback (fetch failed)`: the server could not reach the rental API. Check DNS from the server with `getent hosts <api host>`. If other domains resolve but the API host does not, the API base URL is wrong or the sandbox is offline, and the app serves the built-in sample cars instead. This does not affect load balancing.
-
-## Notes
-
-- API credentials are kept in `.env` and are not committed to the repository.
+- `Source: sample (no API key)`: `API_BASE_URL` or `API_KEY` is missing in `.env`, so no specs are fetched.
+- `Source: api (2/3 specs, no match)`: the API has no data for one of the fleet cars (for example a model or year it does not know). That car is listed with `-` in the spec columns; the others are unaffected.
+- `Source: fallback (HTTP 401)` or similar: the key is wrong or the free plan limit was reached. Other messages such as `fetch failed` or `timeout` mean the API could not be reached from the server.
 
 ## Error handling
 
-- If the API credentials are missing, the request times out (`REQUEST_TIMEOUT_MS`), the API returns an error status, or the response is not a list of cars, the app does not crash. It returns the built-in sample cars instead.
-- The `Source` line under the CLI table and the `source` field in the HTTP response say where the data came from: `api`, `sample`, or `fallback (<reason>)`.
+- Each car's spec lookup is independent. If the key is missing, a request times out (`REQUEST_TIMEOUT_MS`), the API returns an error status or an unexpected response, or it has no match, the app does not crash. The car is still listed with `-` in the spec columns.
+- If a search matches no cars, the CLI prints a message suggesting fewer filters.
+- The `Source` line under the CLI table and the `source` field in the HTTP response say where the data came from: `api`, `api (n/3 specs, <reason>)`, `sample (no API key)` or `fallback (<reason>)`.
+- Spec lookups are cached in memory while the process runs, to stay within the free plan's limits.
 - Unknown routes on the HTTP service return a 404 JSON message pointing to `/health` and `/cars`.
 
 ## Credits and attribution

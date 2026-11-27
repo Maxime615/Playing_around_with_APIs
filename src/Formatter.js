@@ -16,11 +16,11 @@ function engineText(specs){
     if (!specs || (!specs.cylinders && !specs.displacement)) return "-";
     const cyl = specs.cylinders ? `${specs.cylinders} cyl` : "";
     const size =  specs.displacement ? `${specs.displacement}L` : "";
-    return [cyl, size].filter(Boolean).join("");
+    return [cyl, size].filter(Boolean).join(" ");
 }
 
 export function renderTerminalTable(cars, meta = {}){
-    if (cars.lenght === 0) {
+    if (cars.length=== 0) {
         console.log("No cars match your research. Try fewer filters.");
     } else {
         console.table(cars.map((c) =>({
@@ -35,5 +35,5 @@ export function renderTerminalTable(cars, meta = {}){
             Rate: `${c.currency || "USD"} ${c.dailyRate}/d`
         })));
     }
-    console.log(`Server: ${meta.serverId || "local"} | Source: ${meta.source || "unknown"}"`);
+    console.log(`Server: ${meta.serverId || "local"} | Source: ${meta.source || "unknown"}`);
 }
